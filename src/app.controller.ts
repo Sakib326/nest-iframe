@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Req, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import axios from 'axios';
 import parse from 'node-html-parser';
@@ -13,10 +13,15 @@ export class AppController {
   }
 
   @Get('/web')
-  async getWebsiteContent(@Query('url') url: string, @Res() res) {
+  async getWebsiteContent(
+    @Query('url') url: string,
+    @Res() res,
+    @Req() request,
+  ) {
     try {
-      console.log({ url });
-
+      const host = request.headers.host;
+      const protocol = request.protocol;
+      const hosturl = `${protocol}://${host}`;
       const response = await axios.get(url, {
         headers: {
           'User-Agent':
@@ -40,8 +45,8 @@ export class AppController {
         const matches = fullURL.match(regex);
         return matches ? matches[1] : null;
       }
-      const baseurlLink = `http://localhost:3000/web/?url=${getBaseURL(url)}`;
-      const slashUrl = 'http://localhost:3000/web/?url=https:';
+      const baseurlLink = `${hosturl}/web/?url=${getBaseURL(url)}`;
+      const slashUrl = `${hosturl}/web/?url=https:`;
 
       const headLinks = root.querySelectorAll('link');
       headLinks.forEach((link) => {
@@ -68,7 +73,7 @@ export class AppController {
 
       const hrefLink = root.querySelectorAll('a');
 
-      const link = 'http://localhost:3000/web/?url=';
+      const link = `${hosturl}/web/?url=`;
 
       hrefLink.forEach((url) => {
         const src = url.getAttribute('href');
@@ -88,8 +93,6 @@ export class AppController {
       iframes.forEach((iframe) => {
         iframe.remove();
       });
-
-      // Remove elements with ad-specific classes (e.g., "ad", "advertisement", etc.)
       const adClassNames = [
         'ad',
         'advertisement',
